@@ -1,0 +1,90 @@
+server:
+  port: 0
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+    allow-circular-references: true
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+      - org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
+      - org.springframework.ai.autoconfigure.openai.OpenAiChatAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioSpeechAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioTranscriptionAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiImageAutoConfiguration
+      - org.springframework.ai.retry.autoconfigure.SpringAiRetryAutoConfiguration
+      - org.springframework.ai.autoconfigure.openai.OpenAiEmbeddingAutoConfiguration
+      - org.springframework.ai.autoconfigure.openai.OpenAiImageAutoConfiguration
+      - org.springframework.ai.autoconfigure.openai.OpenAiAudioAutoConfiguration
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+    show-sql: false
+  ai:
+    openai:
+      api-key: test-key
+      chat:
+        options:
+          model: gpt-4
+          temperature: 0.7
+          max-tokens: 1000
+
+ai.service:
+  max-concurrent-requests: 100
+  cache-expiration-seconds: 3600
+  rate-limit:
+    requests-per-minute: 100
+
+vllm:
+  api:
+    url: http://localhost:8000
+  model: qwen2.5-7b-instruct
+  max-tokens: 1024
+  temperature: 0.7
+
+jwt:
+  secret: testSecretKeyForJwtTokenGenerationAndValidation2024
+  expiration: 86400000
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      aiService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+      vllmService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+      redisService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+  retry:
+    instances:
+      aiService:
+        maxAttempts: 3
+        waitDuration: 500ms
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  prometheus:
+    metrics:
+      export:
+        enabled: false
+
+logging:
+  level:
+    com.wc.aiservice: INFO
+    org.springframework.ai: WARN
+    org.redisson: WARN

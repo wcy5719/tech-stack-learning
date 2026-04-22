@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  vllm-gpu0:
+    image: vllm/vllm-openai:latest
+    container_name: vllm-gpu0
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./models:/root/.cache/huggingface
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - VLLM_MODEL=/root/.cache/huggingface/models/qwen2.5-7b-instruct
+      - VLLM_WORKER_STRATEGY=pinwheel
+      - VLLM_MAX_MODEL_LEN=8192
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: --host 0.0.0.0 --enforce-eager
+
+  vllm-gpu1:
+    image: vllm/vllm-openai:latest
+    container_name: vllm-gpu1
+    ports:
+      - "8002:8000"
+    volumes:
+      - ./models:/root/.cache/huggingface
+    environment:
+      - CUDA_VISIBLE_DEVICES=1
+      - VLLM_MODEL=/root/.cache/huggingface/models/qwen2.5-7b-instruct
+      - VLLM_WORKER_STRATEGY=pinwheel
+      - VLLM_MAX_MODEL_LEN=8192
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: --host 0.0.0.0 --enforce-eager
+
+  vllm-gpu2:
+    image: vllm/vllm-openai:latest
+    container_name: vllm-gpu2
+    ports:
+      - "8003:8000"
+    volumes:
+      - ./models:/root/.cache/huggingface
+    environment:
+      - CUDA_VISIBLE_DEVICES=2
+      - VLLM_MODEL=/root/.cache/huggingface/models/qwen2.5-7b-instruct
+      - VLLM_WORKER_STRATEGY=pinwheel
+      - VLLM_MAX_MODEL_LEN=8192
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: --host 0.0.0.0 --enforce-eager
+
+  nginx-lb:
+    image: nginx:alpine
+    container_name: vllm-nginx-lb
+    ports:
+      - "8000:80"
+    volumes:
+      - ./nginx-vllm.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - vllm-gpu0
+      - vllm-gpu1
+      - vllm-gpu2
+
+networks:
+  default:
+    name: vllm-network
